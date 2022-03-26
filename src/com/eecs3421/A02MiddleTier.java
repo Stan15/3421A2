@@ -8,9 +8,7 @@ package com.eecs3421;
  Password: root1234
  */
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Properties;
 
 public class A02MiddleTier {
@@ -89,6 +87,23 @@ public class A02MiddleTier {
 
         System.out.println("Connected to database");
         return conn;
+    }
+
+    public String runQuery(String query) {
+        String result = "";
+        Connection conn;
+        try {
+            conn = getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()) {
+                result += rs.getString(0) + ", " + rs.getString(1) + ", "+ rs.getString(2) + "\n";
+            }
+            conn.close();
+        }catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     public String selectionCheck(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {

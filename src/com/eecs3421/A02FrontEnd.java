@@ -172,8 +172,13 @@ public class A02FrontEnd extends JFrame implements ItemListener, ActionListener{
     /** Listens to the submit button click */
     public void actionPerformed(ActionEvent e) {
         String query = "";
-        query += new A02MiddleTier().selectionCheck(eventConference.isSelected(), eventJournal.isSelected(), eventBook.isSelected(), allDates.isSelected(), dateRange.isSelected(), fromDate.getText(), toDate.getText());
-    	queryOutput.setText(query);
+		A02MiddleTier midtier = new A02MiddleTier();
+        query += midtier.selectionCheck(eventConference.isSelected(), eventJournal.isSelected(), eventBook.isSelected(), allDates.isSelected(), dateRange.isSelected(), fromDate.getText(), toDate.getText());
+		query = "SELECT E.Name, E.EventWebLink, E.CFPText" +
+				"FROM Event as E, EventConference as C" +
+				"WHERE E.ID = C.EventID;";
+		String result = midtier.runQuery(query);
+    	queryOutput.setText(String.format("Query:\n-----------\n%s\n\nResult:\n-----------\n%s", query, result));
     }
 
 }
