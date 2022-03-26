@@ -8,9 +8,7 @@ package com.eecs3421;
  Password: root1234
  */
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Properties;
 
 public class A02MiddleTier {
@@ -109,7 +107,6 @@ public class A02MiddleTier {
     }
 
     public String selectionCheck(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {
-    public String queryGenerate(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {
 
         String outputQuery = "";
 
