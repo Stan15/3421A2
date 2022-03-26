@@ -23,19 +23,19 @@ public class A02MiddleTier {
 
     //query library
 
-    String q_conf_all = "SELECT E.Name, E.EventWebLink, E.CFPText " +
+    String q_conf_all = "SELECT E.Name, C.City, C.Country, C.EvDate, E.EventWebLink, E.CFPText " +
                         "FROM Event as E, EventConference as C " +
                         "WHERE E.ID = C.EventID;";
 
     String q_conf_period = "";
 
-    String q_journal_all = "SELECT E.Name, E.EventWebLink, E.CFPText " +
+    String q_journal_all = "SELECT E.Name, J.JournalName, J.Publisher, E.EventWebLink, E.CFPText " +
                            "FROM Event as E, EventJournal as J " +
                            "WHERE E.ID = J.EventID;";
 
     String q_journal_period = "";
 
-    String q_book_all = "SELECT E.Name, E.EventWebLink, E.CFPText " +
+    String q_book_all = "SELECT E.Name, B.Publisher, E.EventWebLink, E.CFPText " +
                         "FROM Event as E, EventBook as B " +
                         "WHERE E.ID = B.EventID;";
 
@@ -91,6 +91,24 @@ public class A02MiddleTier {
         return conn;
     }
 
+    public String runQuery(String query) {
+        String result = "";
+        Connection conn;
+        try {
+            conn = getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()) {
+                result += rs.getString(0) + ", " + rs.getString(1) + ", "+ rs.getString(2) + "\n";
+            }
+            conn.close();
+        }catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public String selectionCheck(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {
     public String queryGenerate(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {
 
         String outputQuery = "";
@@ -100,77 +118,24 @@ public class A02MiddleTier {
             outputQuery = q_event_all;
         }
 
-        //all three boxes checked with period
-        else if (conf && jour && book && period) {
-            //period cannot apply here show some sort of error
-        }
-
-        //conf only all events
+        //conf only no period
         else if (conf && !jour && !book && all) {
             outputQuery = q_conf_all;
         }
 
-        //conf only period
+        //conf only with period
         else if (conf && !jour && !book && period) {
-            outputQuery = "SELECT E.Name, E.EventWebLink, E.CFPText " +
+            outputQuery = "SELECT E.Name, C.City, C.Country, C.EvDate, E.EventWebLink, E.CFPText " +
                           "FROM Event as E, EventConference as C " +
                           "WHERE E.ID = C.EventID, EvDate BETWEEN " + from + " AND " + to + " ;";
         }
 
-        //journal only all events
-        else if (!conf && jour && !book && all) {
-            outputQuery = q_journal_all;
+        else if (conf && !jour && !book && all) {
+            outputQuery = q_conf_all;
         }
 
-        //journal only period
-        else if (!conf && jour && !book && period) {
-            outputQuery = "SELECT E.Name, E.EventWebLink, E.CFPText " +
-                          "FROM Event as E, EventJournal as J " +
-                          "WHERE E.ID = J.EventID BETWEEN " + from + " AND " + to + " ;";
-        }
-
-        //book only all events
-        else if (!conf && !jour && book && all) {
-            outputQuery = q_book_all;
-        }
-
-        //book only period
-        else if (!conf && !jour && book && period) {
-            outputQuery = "SELECT E.Name, E.EventWebLink, E.CFPText " +
-                          "FROM Event as E, EventBook as B " +
-                          "WHERE E.ID = B.EventID BETWEEN " + from + " AND " + to + " ;";
-        }
-
-        //conference & journal all events
-        else if (conf && jour && !book && all) {
-            outputQuery = q_conf_journal_all;
-        }
-
-        //conference & journal period
-        else if (conf && jour && !book && period) {
-            //period cannot apply here show some sort of error
-        }
-        //conference & book all events
-        else if (conf && !jour && book && all) {
-            outputQuery = q_conf_book_all;
-        }
-        //conference & book period
-        else if (conf && !jour && book && period) {
-            //period cannot apply here show some sort of error
-        }
-
-        //journal & book all events
-        else if (!conf && jour && book && all) {
-            outputQuery = q_book_journal_all;
-        }
-
-        //journal & book period
-        else if (!conf && jour && book && period) {
-            //period cannot apply here show some sort of error
-        }
-
-        else if (!conf && !jour && !book && !all && !period) {
-            //do nothing
+        else if (conf && !jour && !book && all) {
+            outputQuery = q_conf_all;
         }
 
         return outputQuery;
