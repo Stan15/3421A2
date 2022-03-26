@@ -8,8 +8,6 @@ package com.eecs3421;
  Password: root1234
  */
 
-import javax.swing.*;
-import java.awt.event.ActionEvent;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -93,18 +91,33 @@ public class A02MiddleTier {
         return conn;
     }
 
-    public void actionPerformed(ActionEvent e) {
+    private String selectionCheck(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {
 
-    }
-
-    private String selectionCheck(JCheckBox conf, JCheckBox journ, JCheckBox book, JRadioButton all , JRadioButton date, JTextField from, JTextField to) {
-
-        String outputQuery;
+        String outputQuery = "";
 
         //all three boxes checked and no period specified
-        if (true) {
+        if (conf && jour && book && all) {
             outputQuery = q_event_all;
-            return outputQuery;
+        }
+
+        //conf only no period
+        else if (conf && !jour && !book && all) {
+            outputQuery = q_conf_all;
+        }
+
+        //conf only with period
+        else if (conf && !jour && !book && period) {
+            outputQuery = "SELECT E.Name, C.City, C.Country, C.EvDate, E.EventWebLink, E.CFPText " +
+                          "FROM Event as E, EventConference as C " +
+                          "WHERE E.ID = C.EventID, EvDate BETWEEN " + from + " AND " + to + " ;";
+        }
+
+        else if (conf && !jour && !book && all) {
+            outputQuery = q_conf_all;
+        }
+
+        else if (conf && !jour && !book && all) {
+            outputQuery = q_conf_all;
         }
 
         return outputQuery;
