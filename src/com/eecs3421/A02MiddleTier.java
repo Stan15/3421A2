@@ -91,7 +91,7 @@ public class A02MiddleTier {
         return conn;
     }
 
-    private String selectionCheck(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {
+    public String selectionCheck(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {
 
         String outputQuery = "";
 
