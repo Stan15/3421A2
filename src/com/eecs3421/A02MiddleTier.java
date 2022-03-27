@@ -16,7 +16,7 @@ public class A02MiddleTier {
 	//This class will contain your code for interacting with Database, acquire the query result and display it in the GUI text area.
 
     String userName = "root";
-    String password = "root1234";
+    String password = "Root1234";
     String serverName = "127.0.0.1";
     String portNumber = "3306";
 
