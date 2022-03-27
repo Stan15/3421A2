@@ -9,6 +9,7 @@ package com.eecs3421;
  */
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Properties;
 
 public class A02MiddleTier {
@@ -19,62 +20,13 @@ public class A02MiddleTier {
     String serverName = "127.0.0.1";
     String portNumber = "3306";
 
-    //query library
-
-    String q_conf_all = "SELECT E.Name, C.City, C.Country, C.EvDate, E.EventWebLink, E.CFPText " +
-                        "FROM Event as E, EventConference as C " +
-                        "WHERE E.ID = C.EventID;";
-
-    String q_conf_period = "";
-
-    String q_journal_all = "SELECT E.Name, J.JournalName, J.Publisher, E.EventWebLink, E.CFPText " +
-                           "FROM Event as E, EventJournal as J " +
-                           "WHERE E.ID = J.EventID;";
-
-    String q_journal_period = "";
-
-    String q_book_all = "SELECT E.Name, B.Publisher, E.EventWebLink, E.CFPText " +
-                        "FROM Event as E, EventBook as B " +
-                        "WHERE E.ID = B.EventID;";
-
-    String q_book_period = "";
-
-    String q_conf_journal_all = "SELECT Name, EventWebLink, CFPText " +
-                                "FROM Event as E RIGHT JOIN EventConference as C ON E.ID = C.EventID " +
-                                "UNION " +
-                                "SELECT Name, EventWeblink, CFPText " +
-                                "FROM Event as E RIGHT JOIN EventJournal as J on E.ID = J.EventID;";
-
-    String q_conf_journal_period = "";
-
-    String q_conf_book_all = "SELECT Name, EventWebLink, CFPText " +
-                             "FROM Event AS E RIGHT JOIN EventConference AS C ON E.ID = C.EventID " +
-                             "UNION SELECT Name, EventWeblink, CFPText " +
-                             "FROM Event AS E RIGHT JOIN EventBook AS B on E.ID = B.EventID;";
-
-    String q_conf_book_period = "";
-
-    String q_book_journal_all = "SELECT Name, EventWebLink, CFPText " +
-                                "FROM Event as E RIGHT JOIN EventJournal as J ON E.ID = J.EventID " +
-                                "UNION " +
-                                "SELECT Name, EventWeblink, CFPText " +
-                                "FROM Event as E RIGHT JOIN EventBook as B on E.ID = B.EventID; ";
-
-    String q_book_journal_period = "";
-
-    String q_event_all = "SELECT Name, EventWebLink, CFPText " +
-                         "From Event;";
-
-    String q_event_period = "";
-
-
     /*
     Connection to MySQL database
     Source code from https://docs.oracle.com/javase/tutorial/jdbc/basics/connecting.html
      */
     public Connection getConnection() throws SQLException {
 
-        Connection conn = null;
+        Connection conn;
         Properties connectionProps = new Properties();
         connectionProps.put("user", this.userName);
         connectionProps.put("password", this.password);
@@ -82,7 +34,7 @@ public class A02MiddleTier {
         conn = DriverManager.getConnection(
                 "jdbc:" + "mysql" + "://" +
                         this.serverName +
-                        ":" + this.portNumber + "/",
+                        ":" + this.portNumber + "/"+"a02schema",
                 connectionProps);
 
         System.out.println("Connected to database");
@@ -96,8 +48,9 @@ public class A02MiddleTier {
             conn = getConnection();
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query);
+            result += "Event Name | Event Weblink | CFP Text\n";
             while (rs.next()) {
-                result += rs.getString(0) + ", " + rs.getString(1) + ", "+ rs.getString(2) + "\n";
+                result += rs.getString(2) + " | " + rs.getString(3) + " | "+ rs.getString(4) + "\n";
             }
             conn.close();
         }catch(SQLException e) {
@@ -108,35 +61,36 @@ public class A02MiddleTier {
 
     public String selectionCheck(boolean conf, boolean jour, boolean book, boolean all , boolean period, String from, String to) {
 
-        String outputQuery = "";
-
-        //all three boxes checked and no period specified
-        if (conf && jour && book && all) {
-            outputQuery = q_event_all;
+        String dateRange = null;
+        // where Exists (Select ActivityDate From ActivityHappens where EventID = ID AND ActivityDate BETWEEN '2020-01-01' AND '2020-12-31')
+        if (!from.isBlank() && !to.isBlank()) {
+            dateRange = String.format(" ActivityDate BETWEEN '%s' AND '%s' ", from, to);
+        } else if (from.isBlank() && !to.isBlank()) {
+            dateRange = String.format(" ActivityDate <= '%s' ", to);
+        } else if (to.isBlank() && !from.isBlank()) {
+            dateRange = String.format(" ActivityDate >= '%s' ", from);
         }
+        String dateConstraint = dateRange==null ? "" : String.format("EXISTS (SELECT ActivityDate FROM ActivityHappens WHERE EventID = ID AND %s)", dateRange);
 
-        //conf only no period
-        else if (conf && !jour && !book && all) {
-            outputQuery = q_conf_all;
+        // AND (ID IN (Select EventID from EventConference) OR ID IN (Select EventID from EventJournal) OR ID IN (Select EventID From EventBook));
+        ArrayList<String> eventTypeConstraints = new ArrayList<>();
+        if (conf) eventTypeConstraints.add("ID IN (Select EventID from EventConference)");
+        if (jour) eventTypeConstraints.add("ID IN (Select EventID from EventJournal)");
+        if (book) eventTypeConstraints.add("ID IN (Select EventID from EventBook)");
+
+        String eventConstraint = "";
+        for (String s : eventTypeConstraints) {
+            if (!eventConstraint.isBlank()) eventConstraint += " OR ";
+            eventConstraint += s;
         }
+        if (!eventConstraint.isBlank()) eventConstraint = "("+eventConstraint+")";
 
-        //conf only with period
-        else if (conf && !jour && !book && period) {
-            outputQuery = "SELECT E.Name, C.City, C.Country, C.EvDate, E.EventWebLink, E.CFPText " +
-                          "FROM Event as E, EventConference as C " +
-                          "WHERE E.ID = C.EventID, EvDate BETWEEN " + from + " AND " + to + " ;";
-        }
+        String constraint = dateConstraint;
+        if (!dateConstraint.isBlank() && !eventConstraint.isBlank()) constraint += " AND ";
+        constraint += eventConstraint;
 
-        else if (conf && !jour && !book && all) {
-            outputQuery = q_conf_all;
-        }
-
-        else if (conf && !jour && !book && all) {
-            outputQuery = q_conf_all;
-        }
-
-        return outputQuery;
-
+        if (eventConstraint.isBlank()) return "";
+        return String.format("SELECT * FROM EVENT WHERE %s", constraint);
     }
 
 }
